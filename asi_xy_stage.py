@@ -3,18 +3,14 @@ Created on Sep 25, 2014
 
 @author:  DZiegler  dominik@scubaprobe.com 
 
+Updated 2018 by Edward Barnard esbarnard@lbl.gov
+
 Serial communication with the controller of the motorized ASI xy-stage. 
 
 '''
 import serial
 import time
-import numpy as np
-# import matplotlib.pyplot as plt
-# import cv2
 
-# from uc480 import uc480
-# import matplotlib.cm as cm
-# from matplotlib.cm import cmap_d
 
 class ASIXYStage(object):
 	def __init__(self, port='COM4', debug=False):
@@ -23,7 +19,7 @@ class ASIXYStage(object):
 		self.debug = debug
 		self.waitTime = 0.1
 		
-		if self.debug: print "ASI XY Stage Initialization"
+		if self.debug: print("ASI XY Stage Initialization")
 		self.ser = serial.Serial(port=self.port,
 								 baudrate=115200,
 								 # waiting time for response [s]
@@ -80,41 +76,41 @@ class ASIXYStage(object):
 
 		
 	def send_cmd(self, cmd):
-		if self.debug: print "ASI XY cmd:", repr(cmd)
+		if self.debug: print(("ASI XY cmd:", repr(cmd)))
 		self.ser.write(cmd + '\r')
-		if self.debug: print "ASI XY done sending cmd"
+		if self.debug: print ("ASI XY done sending cmd")
 		
 	def ask(self, cmd): # format: '2HW X' -> ':A 355'
 		self.send_cmd(cmd)
 		resp1 = self.ser.readline()
 		#time.sleep(0.1) #test Dominik 
-		if self.debug: print "ASI XY ask resp1:", repr(resp1)
+		if self.debug: print("ASI XY ask resp1:", repr(resp1))
 		resp2 = self.ser.read(1)
-		if self.debug: print "ASI XY ask resp2:", repr(resp2)
+		if self.debug: print("ASI XY ask resp2:", repr(resp2))
 		
 		# error handling
 		if not resp2 == '\x03': # End of text (Escape sequence)
-			print "Missing End of Text"
+			print("Missing End of Text")
 			
 		if not resp1.startswith(":A"):
-			print "ASI-stage communication error: missing ':A' "
-			print "resp1 is ", resp1
-			print "resp2 is ", resp2 
+			print("ASI-stage communication error: missing ':A' ")
+			print("resp1 is ", resp1)
+			print("resp2 is ", resp2) 
 		if resp1.startswith(":AERR0"):
-			print "ASI-stage communication error: ERR0"
+			print("ASI-stage communication error: ERR0")
 		else:
 			return resp1[2:].strip() # remove whitespace
 
 	def askFW(self, cmd): # format: '2HW X' -> ':A 355'
 		self.send_cmd(cmd)
 		resp1 = self.ser.readline()
-		if self.debug: print "ASI XY ask resp1:", repr(resp1)
+		if self.debug: print("ASI XY ask resp1:", repr(resp1))
 		resp2 = self.ser.read(1)
-		if self.debug: print "ASI XY ask resp2:", repr(resp2)
+		if self.debug: print("ASI XY ask resp2:", repr(resp2))
 		
 		# error handling
 		if resp1.startswith("ERR0"):
-			print "ASI-stage communication error: ERR0"
+			print("ASI-stage communication error: ERR0")
 		else:
 			return resp1[2:].strip() #s remove whitespace
 
@@ -124,7 +120,7 @@ class ASIXYStage(object):
 			posx=float(posx)/float(self.unitMultiplier)
 			return float(posx)
 		except:
-			print 'could not read x position'
+			print('could not read x position')
 			return float(0.0)
 			return
 	
@@ -134,7 +130,7 @@ class ASIXYStage(object):
 			posy=float(posy)/float(self.unitMultiplier)
 			return float(posy)
 		except:
-			print 'could not read y position'
+			print('could not read y position')
 			return float(0.0)
 			return 
 		
@@ -144,40 +140,40 @@ class ASIXYStage(object):
 			posz=float(posz)/float(self.unitMultiplier)
 			return float(posz)
 		except:
-			print 'could not read z position'
+			print('could not read z position')
 		
 	def getPosXY(self):
 		return (self.getPosX(), self.getPosY())
 	
 	def isBusy(self):
-		if self.debug: print "motors busy?"
+		if self.debug: print("motors busy?")
 		self.send_cmd("2H/")  # status command has a different reply structure
 		resp1 = self.ser.readline()
 		resp2 = self.ser.read(1)
-		if self.debug: print "ASI isBusy resp1", repr(resp1)
-		if self.debug: print "ASI isBusy resp2", repr(resp2)
+		if self.debug: print("ASI isBusy resp1", repr(resp1))
+		if self.debug: print("ASI isBusy resp2", repr(resp2))
 		if resp1[0]=='N': return False
 		elif resp1[0]=='B': return True
 		else:
 			# Communication Error: Wait for move to be completed
 			sleepTime = 7 # [s]
-			print "Incomprehensible answer to isBusy() command. Sleep for %d s." %sleepTime
+			print("Incomprehensible answer to isBusy() command. Sleep for %d s." %sleepTime)
 			time.sleep(sleepTime)
 			return False
 		
 	def isZBusy(self):
-		if self.debug: print "motors busy?"
+		if self.debug: print("motors busy?")
 		self.send_cmd("1H/")  # status command has a different reply structure
 		resp1 = self.ser.readline()
 		resp2 = self.ser.read(1)
-		if self.debug: print "ASI isBusy resp1", repr(resp1)
-		if self.debug: print "ASI isBusy resp2", repr(resp2)
+		if self.debug: print("ASI isBusy resp1", repr(resp1))
+		if self.debug: print("ASI isBusy resp2", repr(resp2))
 		if resp1[0]=='N': return False
 		elif resp1[0]=='B': return True
 		else:
 			# Communication Error: Wait for move to be completed
 			sleepTime = 7 # [s]
-			print "Incomprehensible answer to isZBusy() command. Sleep for %d s." %sleepTime
+			print("Incomprehensible answer to isZBusy() command. Sleep for %d s." %sleepTime)
 			time.sleep(sleepTime)
 			
 			if __name__ == '__main__':
@@ -189,28 +185,28 @@ class ASIXYStage(object):
 			return False
 		
 	def isFWBusy(self):
-		if self.debug: print "FW busy?"
+		if self.debug: print("FW busy?")
 		self.send_cmd("3FDE")  # DumpsErrors
 		resp1 = self.ser.readline()
 		resp2 = self.ser.read(1)
-		if self.debug: print "ASI isBusy resp1", repr(resp1)
-		if self.debug: print "ASI isBusy resp2", repr(resp2)
+		if self.debug: print("ASI isBusy resp1", repr(resp1))
+		if self.debug: print("ASI isBusy resp2", repr(resp2))
 		return False
 		
 		
 	def wait(self):
-		if self.debug: print "wait"
+		if self.debug: print("wait")
 		while self.isBusy():
 			time.sleep(self.waitTime)
 				
 				
 	def waitZ(self):
-		if self.debug: print "wait"
+		if self.debug: print("wait")
 		while self.isZBusy():
 			time.sleep(self.waitTime)
 	
 	def waitFW(self):
-		if self.debug: print "wait"
+		if self.debug: print("wait")
 		while self.isFWBusy():
 			time.sleep(self.waitTime)
 				
@@ -246,7 +242,7 @@ class ASIXYStage(object):
 		posy=float(self.getPosY())
 		time.sleep(0.1)
 		measPosY_int = int(posy*self.unitMultiplier)
-		print (x_int, y_int)
+		print((x_int, y_int))
 		if (x_int!=measPosX_int and y_int!= measPosY_int):
 			self.ask("2HM X=" + str(x_int) + " Y=" + str(y_int))
 			self.wait()
@@ -363,6 +359,7 @@ class ASIXYStage(object):
 		self.ask("1HB Z=" + str(z))
 		
 	def moveFWto(self, filtpos):
+		""" Move filter wheel to position"""
 		self.askFW("3FDE") # Dumps errors 
 		self.askFW("3FMP " + str(filtpos))
 		self.waitFW()
@@ -387,7 +384,7 @@ class ASIXYStage(object):
 	
 	def close(self):
 		self.ser.close()
-		print 'closed ASI xy-stage'
+		print('closed ASI xy-stage')
 		
 if __name__ == '__main__':
 	stage = ASIXYStage(port="COM4", debug=False)
