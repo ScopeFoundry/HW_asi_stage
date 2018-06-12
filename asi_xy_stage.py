@@ -26,7 +26,8 @@ class ASIXYStage(object):
                                  timeout=0.1,
                                  bytesize=8, parity='N', 
                                  stopbits=1, xonxoff=0, rtscts=0)
-        self.ser.flush()
+        self.ser.write(b'\b') # <del>  or  <bs>- Abort current command and flush input buffer
+        self.ser.flush() # flush output buffer
         #time.sleep(0.1)
         
         # Stage Info:
@@ -37,16 +38,16 @@ class ASIXYStage(object):
         # set the coordinate frame
         self.unitMultiplier = 10 # converts the unit used to tenths of microns
         self.c_mm = 10**4 / self.unitMultiplier    # conversion to mm
-        if __name__ == '__main__':
-            f = open('ASIStageCurrentPosition.txt','r')
-        else:
-            f = open('equipment/ASIStageCurrentPosition.txt','r')
-        storedPos = f.read().split("\t")
+#         if __name__ == '__main__':
+#             f = open('ASIStageCurrentPosition.txt','r')
+#         else:
+#             f = open('equipment/ASIStageCurrentPosition.txt','r')
+#         storedPos = f.read().split("\t")
+#         
+#         self.setCurrentPosToXY(float(storedPos[0]), float(storedPos[1]), float(storedPos[2]))
+#         f.close()
         
-        self.setCurrentPosToXY(float(storedPos[0]), float(storedPos[1]), float(storedPos[2]))
-        f.close()
-        
-        # configure stage
+        """# configure stage
         self.setLimits(-50, 50, -50, 50)    # travel range [mm]
         self.setLimitsZ(-10, 5)                # travel range in mm (-10, 5)
         self.setDriftErrorXY(0.01, 0.01)    # drift error [mm]
@@ -68,16 +69,12 @@ class ASIXYStage(object):
                  
         # close laser shutter
         self.moveFWto(5)
+        """
         
-         ###not sure next line is needed.
-         #self.asiStage_connectivity = self.add_logged_quantity(name = "ASI stage connectivity", dtype=bool, ro=False)
-        
-    #self.asiStage_connectivity = self.add_logged_quantity(name = "ASI stage connectivity", dtype=bool, ro=False).connect_bidir_to_widget(self.gui.ui.ASI_stage_CompensateTilt_checkBox)
-
         
     def send_cmd(self, cmd):
         if self.debug: print(("ASI XY cmd:", repr(cmd)))
-        self.ser.write(cmd + '\r')
+        self.ser.write((cmd + '\r').encode())
         if self.debug: print ("ASI XY done sending cmd")
         
     def ask(self, cmd): # format: '2HW X' -> ':A 355'
@@ -89,9 +86,10 @@ class ASIXYStage(object):
         if self.debug: print("ASI XY ask resp2:", repr(resp2))
         
         # error handling
-        if not resp2 == '\x03': # End of text (Escape sequence)
+        if not resp2 == b'\x03': # End of text (Escape sequence)
             print("Missing End of Text")
             
+        resp1 = resp1.decode()
         if not resp1.startswith(":A"):
             print("ASI-stage communication error: missing ':A' ")
             print("resp1 is ", resp1)
@@ -103,7 +101,7 @@ class ASIXYStage(object):
 
     def askFW(self, cmd): # format: '2HW X' -> ':A 355'
         self.send_cmd(cmd)
-        resp1 = self.ser.readline()
+        resp1 = self.ser.readline().decode()
         if self.debug: print("ASI XY ask resp1:", repr(resp1))
         resp2 = self.ser.read(1)
         if self.debug: print("ASI XY ask resp2:", repr(resp2))
@@ -148,7 +146,7 @@ class ASIXYStage(object):
     def isBusy(self):
         if self.debug: print("motors busy?")
         self.send_cmd("2H/")  # status command has a different reply structure
-        resp1 = self.ser.readline()
+        resp1 = self.ser.readline().decode()
         resp2 = self.ser.read(1)
         if self.debug: print("ASI isBusy resp1", repr(resp1))
         if self.debug: print("ASI isBusy resp2", repr(resp2))
@@ -156,7 +154,7 @@ class ASIXYStage(object):
         elif resp1[0]=='B': return True
         else:
             # Communication Error: Wait for move to be completed
-            sleepTime = 7 # [s]
+            sleepTime = 1 # [s]
             print("Incomprehensible answer to isBusy() command. Sleep for %d s." %sleepTime)
             time.sleep(sleepTime)
             return False
@@ -187,7 +185,7 @@ class ASIXYStage(object):
     def isFWBusy(self):
         if self.debug: print("FW busy?")
         self.send_cmd("3FDE")  # DumpsErrors
-        resp1 = self.ser.readline()
+        resp1 = self.ser.readline().decode()
         resp2 = self.ser.read(1)
         if self.debug: print("ASI isBusy resp1", repr(resp1))
         if self.debug: print("ASI isBusy resp2", repr(resp2))
@@ -214,17 +212,17 @@ class ASIXYStage(object):
         x_int = self.workaroundASIStageBug(target)
         measPosX_int = int(self.getPosX()*self.unitMultiplier)
         if x_int != measPosX_int:  # avoid overriding with same value 
-            self.ask("2HM X=" + str(x_int))
+            self.ask("2HM X= {:d}".format(x_int))
             self.wait()
-            self.writePosToFile()
+            #self.writePosToFile()
         
     def moveToY(self, target):
         y_int = self.workaroundASIStageBug(target)
         measPosY_int = int(self.getPosY()*self.unitMultiplier)
         if y_int != measPosY_int:  # avoid overriding with same value 
-            self.ask("2HM Y=" + str(y_int))
+            self.ask("2HM Y= {:d}".format(y_int))
             self.wait()
-            self.writePosToFile()
+            #self.writePosToFile()
             
     def moveToZ(self, target):
         z_int = self.workaroundASIStageBug(target)
@@ -232,7 +230,7 @@ class ASIXYStage(object):
         if z_int != measPosZ_int:  # avoid overriding with same value 
             self.ask("1HM Z=" + str(z_int))
             self.waitZ()
-            self.writePosToFile()
+            #self.writePosToFile()
         
     def moveToXY(self, targetX, targetY):
         (x_int, y_int) = self.workaroundASIStageBug(targetX, targetY)
@@ -246,15 +244,15 @@ class ASIXYStage(object):
         if (x_int!=measPosX_int and y_int!= measPosY_int):
             self.ask("2HM X=" + str(x_int) + " Y=" + str(y_int))
             self.wait()
-            self.writePosToFile()
+            #self.writePosToFile()
         elif (x_int!=measPosX_int and y_int==measPosY_int):
             self.ask("2HM X=" + str(x_int))
             self.wait()
-            self.writePosToFile()  
+            #self.writePosToFile()  
         elif (x_int==measPosX_int and y_int!=measPosY_int):
             self.ask("2HM Y=" + str(y_int))
             self.wait()
-            self.writePosToFile()
+            #self.writePosToFile()
         
     def moveRelX(self, step):
         if step!=0:
@@ -275,7 +273,7 @@ class ASIXYStage(object):
             stepZ_int= self.workaroundASIStageBug(stepZ)
             self.ask("1HR Z=" + str(stepZ_int))
             self.waitZ()
-            self.writePosToFile()
+            #self.writePosToFile()
     
     def moveRelXY(self, stepX, stepY):
         if stepX==0 and stepY!=0:
@@ -286,14 +284,25 @@ class ASIXYStage(object):
             stepX_int, stepY_int = self.workaroundASIStageBug(stepX, stepY)             
             self.ask("2HR X=" + str(stepX_int) + " Y=" + str(stepY_int))
             self.wait()
-            self.writePosToFile()
+            #self.writePosToFile()
 
+    def homeXY(self):
+        self.ask("2HHOME X Y")
+        
+    
     
     def workaroundASIStageBug(self, a, *b):
         # Some positions cannot be processed by ASI stage,
         # leading to communication issues.
         # All of them end with the digit 3.
         # workaround: add a tenth of a micron
+        
+        #disable workaround
+        if len(b) == 1:
+            return int(a*self.unitMultiplier), int(b*self.unitMultiplier)
+        else:
+            return int(a*self.unitMultiplier)
+        #work around
         a_int = int(a*self.unitMultiplier)
         if int(str(a_int)[-1]) == 3: a_int += 1
         if len(b)==1:

@@ -1,12 +1,14 @@
 from ScopeFoundry import HardwareComponent
 from collections import OrderedDict
+import threading
+import time
 
 try:
-    from .asi_xy_stage import ASIXYStage
+    from .asi_stage_dev import ASIXYStage
 except Exception as err:
     print("Cannot load required modules for ASI xy-stage:", err)
 
-class ASIStage(HardwareComponent):
+class ASIStageHW(HardwareComponent):
     
     name = 'asi_stage'
     
@@ -19,21 +21,32 @@ class ASIStage(HardwareComponent):
         ('6_', 6),
         ('7_', 7),])
     
+    def __init__(self, app, debug=False, name=None, enable_xy=True, enable_z=True, enable_fw=True):
+        HardwareComponent.__init__(self, app, debug=debug, name=name)
+    
     def setup(self):
     
-        self.settings.New('x_position', 
-                          initial = 0,
-                          dtype=float, fmt='%10.1f', ro=False,
-                          unit='um',
-                          vmin=-1e10, vmax=1e10)
+    
+        xy_kwargs = dict(initial = 0,
+                          dtype=float,
+                          unit='mm',
+                          spinbox_decimals = 4,
+                          spinbox_step=0.1)
+        x_pos = self.settings.New('x_position', ro=True, **xy_kwargs)        
+        y_pos = self.settings.New('y_position', ro=True, **xy_kwargs)
         
-        self.settings.New('y_position',  dtype=float, unit='um', ro=False)
-        self.settings.New('z_position',  dtype=float, unit='um', ro=False)        
+        x_target = self.settings.New('x_target', ro=False, **xy_kwargs)        
+        y_target = self.settings.New('y_target', ro=False, **xy_kwargs)
         
-        self.settings.New('filter_wheel', dtype=str, ro=False)
+        
+        
+        #self.settings.New('z_position',  dtype=float, unit='um', ro=False, reread_from_hardware_after_write=True)        
+        
+        #self.settings.New('filter_wheel', dtype=str, ro=False)
         
         self.settings.New('port', dtype=str, initial='COM4')
         
+        self.add_operation("Halt XY", self.halt_xy)
         
     def connect(self):
         S = self.settings
@@ -44,26 +57,55 @@ class ASIStage(HardwareComponent):
         # connect logged quantities
         
         S.x_position.connect_to_hardware(
-            read_func = self.stage.getPosX,
-            write_func =  self.stage.moveToX)
+            read_func = self.stage.read_pos_x)
         S.y_position.connect_to_hardware(
-            read_func = self.stage.getPosX,
-            write_func =  self.stage.moveToX)
-        S.z_position.connect_to_hardware(
-            read_func = self.stage.getPosX,
-            write_func =  self.stage.moveToX)
+            read_func = self.stage.read_pos_y)
         
-        S.filter_wheel.connect_to_hardware(
-            write_func = self.write_fw_position
+        try:
+            S.x_position.read_from_hardware()
+            S.y_position.read_from_hardware()
+        except Exception as err:
+            print('cannot read xy position')
+            
+        S['x_target'] = S['x_position']
+        S['y_target'] = S['y_position']
+
+        S.x_target.connect_to_hardware(
+            write_func = self.stage.move_x
             )
+        S.y_target.connect_to_hardware(
+            write_func = self.stage.move_y
+            )
+
         
-        S['filter_wheel'] = '5_Closed'
+#         S.z_position.connect_to_hardware(
+#             read_func = self.stage.getPosZ,
+#             write_func =  self.stage.moveToZ)
+        
+#         S.filter_wheel.connect_to_hardware(
+#             write_func = self.write_fw_position
+#             )
+#         
+#         S['filter_wheel'] = '5_Closed'
+        
+        S.x_position.read_from_hardware()
+        S.y_position.read_from_hardware()
         
         
+        self.update_thread_interrupted = False
+        self.update_thread = threading.Thread(target=self.update_thread_run)
+        self.update_thread.start()
+
         
     def disconnect(self):
         
         self.settings.disconnect_all_from_hardware()
+        
+        if hasattr(self, 'update_thread'):
+            self.update_thread_interrupted = True
+            self.update_thread.join(timeout=1.0)
+            del self.update_thread
+
         
         if hasattr(self, 'stage'):
             self.stage.close()
@@ -74,4 +116,14 @@ class ASIStage(HardwareComponent):
         assert pos_name in self.filter_wheel_positions.keys()
         fw_number = self.filter_wheel_positions[pos_name]
         self.stage.moveFWto(fw_number)
+        
+        
+    def update_thread_run(self):
+        while not self.update_thread_interrupted:
+            self.settings.x_position.read_from_hardware()
+            self.settings.y_position.read_from_hardware()
+            time.sleep(0.050)
+
+    def halt_xy(self):
+        self.stage.halt_xy()
         
