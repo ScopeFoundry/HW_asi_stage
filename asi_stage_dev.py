@@ -10,7 +10,7 @@ class ASIXYStage(object):
         self.ser = serial.Serial(port=self.port,
                          baudrate=115200,
                          # waiting time for response [s]
-                         timeout=0.1,
+                         timeout=0.02,
                          bytesize=8, parity='N', 
                          stopbits=1, xonxoff=0, rtscts=0)
 
@@ -40,10 +40,19 @@ class ASIXYStage(object):
     def ask(self, cmd): # format: '2HW X' -> ':A 355'
         with self.lock:
             self.send_cmd(cmd)
+            time.sleep(0.010)
             resp1 = self.ser.readline()
             if self.debug: print("ASI XY ask resp1:", repr(resp1))
-            resp2 = self.ser.read(1)
-            if self.debug: print("ASI XY ask resp2:", repr(resp2))
+            #read until end-of-text is received
+            t0 = time.time()
+            timeout = 1
+            while True:
+                resp2 = self.ser.readline()
+                if self.debug: print("ASI XY ask resp2:", repr(resp2))
+                if resp2 == b'\x03':
+                    break
+                if time.time()-t0 > timeout:
+                    raise IOError("ASI stage took too long too respond")
 
         
         assert resp2 == b'\x03' # End of text (Escape sequence)
@@ -86,10 +95,10 @@ class ASIXYStage(object):
                 raise IOError("ASI stage took too long during wait")
             
     def move_x(self, target):
-        self.ask("2HM X= {:d}".format(int(target*self.unit_scale)))
+        self.ask("2HM X= {:d}".format(self._scale(target)))
             
     def move_y(self, target):
-        self.ask("2HM Y= {:d}".format(int(target*self.unit_scale)))
+        self.ask("2HM Y= {:d}".format(self._scale(target)))
         
     def move_x_and_wait(self, target,timeout=10):
         if int(self.read_pos_x()*self.unit_scale) == int(target*self.unit_scale):
@@ -111,7 +120,36 @@ class ASIXYStage(object):
         
     def set_limits_xy(self, xl, xu, yl, yu): # x in [xl, xu], y in [yl, yu]
         self.ask("2HSL X= {:f} Y= {:f}".format(xl, yl))
-        self.ask("2HSU X=" + str(xu) + " Y=" + str(yu))        
+        self.ask("2HSU X=" + str(xu) + " Y=" + str(yu))
+        
+    def move_x_rel(self, step):
+        if step!=0:
+            self.ask("2HR X={:d}".format(int(step*self.unit_scale)))
 
+    def move_y_rel(self, step):
+        if step!=0:
+            self.ask("2HR Y={:d}".format(int(step*self.unit_scale)))
 
+    def set_backlash_xy(self, backlash_x, backlash_y):
+        self.ask("2HB X= {:1.4f} Y= {:1.4f}".format(backlash_x,backlash_y))
+    
+    def get_speed(self):
+        print(self.ask("2HSPEED X? Y?"))
+        
+    def set_speed(self, speed_x, speed_y):
+        self.ask("2HSPEED X= {:1.4f} Y= {:1.4f}".format(speed_x,speed_y))
+        
+    def set_acc(self, acc_x, acc_y):
+        self.ask("2HAC X= {:1.4f} Y= {:1.4f}".format(acc_x,acc_y))    
+        
+    def _scale(self, val):
+        """returns integer value for built-in 
+        scale from physical units (val)"""
+        
+        scale_int = int(val*self.unit_scale)
+        # stage bug: positions can't end in 3
+        if scale_int % 10 == 3:
+            scale_int +=1
+        return scale_int
+        
     

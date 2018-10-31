@@ -57,9 +57,9 @@ class ASIStageHW(HardwareComponent):
         # connect logged quantities
         
         S.x_position.connect_to_hardware(
-            read_func = self.stage.read_pos_x)
+            read_func = self.read_pos_x)
         S.y_position.connect_to_hardware(
-            read_func = self.stage.read_pos_y)
+            read_func = self.read_pos_y)
         
         try:
             S.x_position.read_from_hardware()
@@ -71,10 +71,10 @@ class ASIStageHW(HardwareComponent):
         S['y_target'] = S['y_position']
 
         S.x_target.connect_to_hardware(
-            write_func = self.stage.move_x
+            write_func = self.move_x
             )
         S.y_target.connect_to_hardware(
-            write_func = self.stage.move_y
+            write_func = self.move_y
             )
 
         
@@ -91,6 +91,13 @@ class ASIStageHW(HardwareComponent):
         S.x_position.read_from_hardware()
         S.y_position.read_from_hardware()
         
+        # set reasonable values for moving the stage
+        self.stage.set_speed(0.1, 0.1) # in mm, standard 7mm/s, this is more reasonable
+        self.stage.set_backlash_xy(0.0, 0.0) # disable backlash correction
+        self.stage.set_acc(10,10) #in ms
+        # if other observer is actively reading position,
+        # don't update as frequently in update_thread
+        self.other_observer = False
         
         self.update_thread_interrupted = False
         self.update_thread = threading.Thread(target=self.update_thread_run)
@@ -122,8 +129,39 @@ class ASIStageHW(HardwareComponent):
         while not self.update_thread_interrupted:
             self.settings.x_position.read_from_hardware()
             self.settings.y_position.read_from_hardware()
-            time.sleep(0.050)
+            if self.other_observer:
+                time.sleep(1.0)
+            else:
+                time.sleep(0.050)
 
     def halt_xy(self):
         self.stage.halt_xy()
+        
+    def read_pos_x(self):        
+        return self.attempt_10_times(self.stage.read_pos_x)
+
+    def read_pos_y(self):
+        return self.attempt_10_times(self.stage.read_pos_y)
+
+    def move_x(self, x):
+        return self.attempt_10_times(self.stage.move_x, x)
+
+    def move_y(self, y):
+        return self.attempt_10_times(self.stage.move_y, y)
+    
+    def is_busy_xy(self):
+        return self.attempt_10_times(self.stage.is_busy_xy)
+    
+    
+    def attempt_10_times(self, func, *args,**kwargs):
+        attempts = 0
+        while attempts < 10:
+            try:
+                retval = func(*args,**kwargs)
+                if attempts != 0:
+                    print('ASI stage needed attempts:'+str(attempts))
+                return retval
+            except:
+                attempts +=1
+    
         
