@@ -38,7 +38,9 @@ class ASIStageHW(HardwareComponent):
         x_target = self.settings.New('x_target', ro=False, **xy_kwargs)        
         y_target = self.settings.New('y_target', ro=False, **xy_kwargs)
         
-        
+        self.settings.New("speed_xy", ro=False, initial=6, unit='mm/s', spinbox_decimals=3)
+        self.settings.New("acc_xy", ro=False, initial=10, unit='ms', spinbox_decimals=1)
+        self.settings.New("backlash_xy", ro=False, initial=0.040, unit='mm', spinbox_decimals=3)
         
         #self.settings.New('z_position',  dtype=float, unit='um', ro=False, reread_from_hardware_after_write=True)        
         
@@ -76,7 +78,18 @@ class ASIStageHW(HardwareComponent):
         S.y_target.connect_to_hardware(
             write_func = self.move_y
             )
-
+        
+        S.speed_xy.connect_to_hardware(
+            write_func = self.stage.set_speed_xy)
+        S.speed_xy.write_to_hardware()
+        
+        S.acc_xy.connect_to_hardware(
+            write_func = self.stage.set_acc_xy)
+        S.acc_xy.write_to_hardware()
+        
+        S.backlash_xy.connect_to_hardware(
+            write_func = self.stage.set_backlash_xy)
+        S.backlash_xy.write_to_hardware()
         
 #         S.z_position.connect_to_hardware(
 #             read_func = self.stage.getPosZ,
@@ -92,9 +105,9 @@ class ASIStageHW(HardwareComponent):
         S.y_position.read_from_hardware()
         
         # set reasonable values for moving the stage
-        self.stage.set_speed(0.1, 0.1) # in mm, standard 7mm/s, this is more reasonable
-        self.stage.set_backlash_xy(0.0, 0.0) # disable backlash correction
-        self.stage.set_acc(10,10) #in ms
+        #self.stage.set_speed(0.1, 0.1) # in mm, standard 7mm/s, this is more reasonable
+        #self.stage.set_backlash_xy(0.0, 0.0) # disable backlash correction
+        #self.stage.set_acc(10,10) #in ms
         # if other observer is actively reading position,
         # don't update as frequently in update_thread
         self.other_observer = False

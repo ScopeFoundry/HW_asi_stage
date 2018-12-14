@@ -37,6 +37,16 @@ class ASIStageControlMeasure(Measurement):
         
         self.ui.xy_stop_pushButton.clicked.connect(self.stage.halt_xy)
 
+        self.stage.settings.speed_xy.connect_to_widget(
+            self.ui.xy_speed_doubleSpinBox)
+
+        self.stage.settings.acc_xy.connect_to_widget(
+            self.ui.xy_acc_doubleSpinBox)
+
+        self.stage.settings.backlash_xy.connect_to_widget(
+            self.ui.xy_backlash_doubleSpinBox)
+
+
         ####### Buttons
         def x_up():
             self.stage.settings['x_target']+=self.settings['jog_step_xy']
