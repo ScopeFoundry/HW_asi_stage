@@ -22,6 +22,8 @@ class ASIStageHW(HardwareComponent):
         ('7_', 7),])
     
     def __init__(self, app, debug=False, name=None, enable_xy=True, enable_z=True, enable_fw=True):
+        self.enable_xy = enable_xy
+        self.enable_z = enable_z
         HardwareComponent.__init__(self, app, debug=debug, name=name)
     
     def setup(self):
@@ -41,8 +43,12 @@ class ASIStageHW(HardwareComponent):
         self.settings.New("speed_xy", ro=False, initial=6, unit='mm/s', spinbox_decimals=3)
         self.settings.New("acc_xy", ro=False, initial=10, unit='ms', spinbox_decimals=1)
         self.settings.New("backlash_xy", ro=False, initial=0.040, unit='mm', spinbox_decimals=3)
+
         
-        #self.settings.New('z_position',  dtype=float, unit='um', ro=False, reread_from_hardware_after_write=True)        
+        if self.enable_z:
+            z_pos = self.settings.New('z_position', ro=True, **xy_kwargs)
+            z_target = self.settings.New('z_target', ro=False, **xy_kwargs)        
+
         
         #self.settings.New('filter_wheel', dtype=str, ro=False)
         
@@ -78,7 +84,7 @@ class ASIStageHW(HardwareComponent):
         S.y_target.connect_to_hardware(
             write_func = self.move_y
             )
-        
+
         S.speed_xy.connect_to_hardware(
             write_func = self.stage.set_speed_xy)
         S.speed_xy.write_to_hardware()
@@ -95,6 +101,18 @@ class ASIStageHW(HardwareComponent):
 #             read_func = self.stage.getPosZ,
 #             write_func =  self.stage.moveToZ)
         
+
+        if self.enable_z:
+            S.z_position.connect_to_hardware(
+                read_func = self.stage.read_pos_z)
+            S.z_position.read_from_hardware()
+            S['z_target'] = S['z_position']
+            S.z_target.connect_to_hardware(
+                write_func = self.stage.move_z
+                )
+
+
+                
 #         S.filter_wheel.connect_to_hardware(
 #             write_func = self.write_fw_position
 #             )
@@ -104,10 +122,15 @@ class ASIStageHW(HardwareComponent):
         S.x_position.read_from_hardware()
         S.y_position.read_from_hardware()
         
+        
         # set reasonable values for moving the stage
         #self.stage.set_speed(0.1, 0.1) # in mm, standard 7mm/s, this is more reasonable
         #self.stage.set_backlash_xy(0.0, 0.0) # disable backlash correction
         #self.stage.set_acc(10,10) #in ms
+        
+        self.stage.set_speed_xy(S['speed_xy'], S['speed_xy']) # in mm, standard 7mm/s, this is more reasonable
+        self.stage.set_backlash_xy(0.0, 0.0) # disable backlash correction
+        self.stage.set_acc(10,10) #in ms
         # if other observer is actively reading position,
         # don't update as frequently in update_thread
         self.other_observer = False
@@ -149,6 +172,9 @@ class ASIStageHW(HardwareComponent):
 
     def halt_xy(self):
         self.stage.halt_xy()
+    def set_speed_xy(self, speed):
+        self.stage.set_speed_xy(speed,speed)
+        #self.stage.get_speed()
         
     def read_pos_x(self):        
         return self.attempt_10_times(self.stage.read_pos_x)

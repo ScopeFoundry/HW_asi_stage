@@ -50,10 +50,10 @@ class ASIStage2DScan(BaseRaster2DSlowScan):
             self.stage.other_observer = False
             
     def move_position_start(self, h,v):
-        self.move_position(h-0.012, v-0.012) # manual backlash correction
+        self.move_position(h-0.02, v-0.02) # manual backlash correction
         self.move_position(h, v)
     def move_position_slow(self, h,v, dh,dv):
-        self.move_position(h-0.012, v-0.012) # manual backlash correction
+        self.move_position(h-0.02, v-0.02) # manual backlash correction
         self.move_position(h, v)
 
     def move_position_fast(self,  h,v, dh,dv):

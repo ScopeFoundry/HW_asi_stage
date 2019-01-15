@@ -36,7 +36,27 @@ class ASIXYStage(object):
         if self.debug: print("ASI XY cmd:", repr(cmd), repr(cmd_bytes))
         self.ser.write(cmd_bytes)
         if self.debug: print ("ASI XY done sending cmd")
-        
+    def info(self,axis):
+        with self.lock:
+            self.send_cmd("2HI "+axis)
+            time.sleep(0.010)
+            resp1 = self.ser.readline().decode()+" "
+            if self.debug: print("ASI XY ask resp1:", repr(resp1))
+            #read until end-of-text is received
+            t0 = time.time()
+            timeout = 10
+            resp = 'output:\n '
+            while True:
+                resp2 = self.ser.readline()
+                if self.debug: print("ASI XY ask resp2:", repr(resp2))
+                if resp2 == b'\x03':
+                    break
+                resp2 = resp2.decode()+" "
+                resp = resp+resp2
+                if time.time()-t0 > timeout:
+                    raise IOError("ASI stage took too long too respond")
+        return resp
+    
     def ask(self, cmd): # format: '2HW X' -> ':A 355'
         with self.lock:
             self.send_cmd(cmd)
@@ -58,7 +78,7 @@ class ASIXYStage(object):
         assert resp2 == b'\x03' # End of text (Escape sequence)
         
         resp1 = resp1.decode()
-
+        
         assert resp1.startswith(":A")
         
         if resp1.startswith(":AERR0"):
@@ -75,6 +95,10 @@ class ASIXYStage(object):
         y = self.ask("2HW Y")
         return float(y)/self.unit_scale
     
+    def read_pos_z(self):
+        y = self.ask("1HW Z")
+        return float(y)/self.unit_scale
+    
     def is_busy_xy(self):
         with self.lock:
             self.send_cmd("2H/")  # status command has a different reply structure
@@ -87,12 +111,31 @@ class ASIXYStage(object):
         if resp1[0]=='N':   return False
         elif resp1[0]=='B': return True
     
+    def is_busy_z(self):
+        with self.lock:
+            self.send_cmd("1H/")  # status command has a different reply structure
+            resp1 = self.ser.readline().decode()
+            resp2 = self.ser.read(1)
+        assert resp1[0] in 'NB'
+        
+        if resp1[0]=='N':   return False
+        elif resp1[0]=='B': return True
+    
+
     def wait_until_not_busy_xy(self, timeout=10):    
         t0 = time.time()
         while self.is_busy_xy():
             time.sleep(0.010)
             if time.time() - t0 > timeout:
                 raise IOError("ASI stage took too long during wait")
+
+    def wait_until_not_busy_z(self, timeout=10):    
+        t0 = time.time()
+        while self.is_busy_z():
+            time.sleep(0.010)
+            if time.time() - t0 > timeout:
+                raise IOError("ASI stage took too long during wait")
+
             
     def move_x(self, target):
         self.ask("2HM X= {:d}".format(self._scale(target)))
@@ -100,6 +143,11 @@ class ASIXYStage(object):
     def move_y(self, target):
         self.ask("2HM Y= {:d}".format(self._scale(target)))
         
+    def move_z(self, target):
+        self.ask("1HM Z= {:d}".format(self._scale(target))) 
+    
+        self.ask("1HM Z= {:d}".format(self._scale(target))) 
+          
     def move_x_and_wait(self, target,timeout=10):
         if int(self.read_pos_x()*self.unit_scale) == int(target*self.unit_scale):
             return # avoid overriding with same value 
@@ -114,6 +162,35 @@ class ASIXYStage(object):
 
     def home_xy(self):
         self.ask("2HHOME X Y")
+        
+    def home_and_wait_xy(self, timeout=90):
+        self.home_xy()
+        self.wait_until_not_busy_xy(timeout)
+
+    def home_and_wait_z(self, timeout=90):
+        self.home_z()
+        self.wait_until_not_busy_z(timeout)
+
+    
+    def home_z(self):
+        self.ask("1HHOME Z")
+        
+    def home_and_center_xy(self):
+        speed = min(self.get_speed_x(), self.get_speed_y())
+        timeout = 50./speed
+        self.home_and_wait_xy(2*timeout)
+        self.move_x_rel(-45)
+        self.move_y_rel(-45)
+        self.wait_until_not_busy_xy(timeout)
+        self.zero_xy()
+
+    def home_and_center_z(self):
+        speed =self.get_speed_z()
+        timeout = 30./speed
+        self.home_and_wait_z(2*timeout)
+        self.move_z_rel(-25)
+        self.wait_until_not_busy_z(timeout)
+        self.zero_z()
         
     def halt_xy(self):
         self.ask("2HHALT")
@@ -142,9 +219,28 @@ class ASIXYStage(object):
         disables the anti-backlash algorithm for that axis
         """
         self.ask("2HB X= {:1.4f} Y= {:1.4f}".format(backlash_x,backlash_y))
+
     
-    def get_speed(self):
-        print(self.ask("2HSPEED X? Y?"))
+    def move_z_rel(self, step):
+        if step!=0:
+            self.ask("1HR Z={:d}".format(int(step*self.unit_scale)))
+
+        
+#     def get_speed_xy(self):
+#         print(self.ask("2HSPEED X? Y?"))
+#     
+
+    def get_speed_x(self):
+        speed = float(self.ask("2HSPEED X?").split("=")[1])
+        return speed
+    
+    def get_speed_y(self):
+        speed = float(self.ask("2HSPEED Y?").split("=")[1])
+        return speed  
+    
+    def get_speed_z(self):
+        speed = float(self.ask("1HSPEED Z?").split("=")[1])
+        return speed  
         
     def set_speed_xy(self, speed_x, speed_y=None):
         if speed_y is None:
@@ -177,5 +273,11 @@ class ASIXYStage(object):
         if scale_int % 10 == 3:
             scale_int +=1
         return scale_int
+    
+    def zero_xy(self):
+        self.ask("2HZERO")
+    def zero_z(self):
+        self.ask("1HZERO")
+    #### z-stage
         
     
