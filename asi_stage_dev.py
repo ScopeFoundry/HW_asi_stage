@@ -1,6 +1,7 @@
 import serial
 import time
 import threading
+import numpy as np
 
 class ASIXYStage(object):
     
@@ -65,7 +66,7 @@ class ASIXYStage(object):
             if self.debug: print("ASI XY ask resp1:", repr(resp1))
             #read until end-of-text is received
             t0 = time.time()
-            timeout = 1
+            timeout = 0.5
             while True:
                 resp2 = self.ser.readline()
                 if self.debug: print("ASI XY ask resp2:", repr(resp2))
@@ -96,8 +97,8 @@ class ASIXYStage(object):
         return float(y)/self.unit_scale
     
     def read_pos_z(self):
-        y = self.ask("1HW Z")
-        return float(y)/self.unit_scale
+        z = self.ask("1HW Z")
+        return float(z)/self.unit_scale
     
     def is_busy_xy(self):
         with self.lock:
@@ -144,8 +145,6 @@ class ASIXYStage(object):
         self.ask("2HM Y= {:d}".format(self._scale(target)))
         
     def move_z(self, target):
-        self.ask("1HM Z= {:d}".format(self._scale(target))) 
-    
         self.ask("1HM Z= {:d}".format(self._scale(target))) 
           
     def move_x_and_wait(self, target,timeout=10):
@@ -207,28 +206,12 @@ class ASIXYStage(object):
         if step!=0:
             self.ask("2HR Y={:d}".format(int(step*self.unit_scale)))
 
-    def set_backlash_xy(self, backlash_x, backlash_y=None):
-        if backlash_y is None:
-            backlash_y = backlash_x
-        
-        """
-        set the amount of distance in millimeters to travel to
-        absorb the backlash in the axis' gearing. This backlash value works with an antibacklash
-        routine built into the controller. The routine ensures that the controller
-        always approaches the final target from the same direction. A value of zero (0)
-        disables the anti-backlash algorithm for that axis
-        """
-        self.ask("2HB X= {:1.4f} Y= {:1.4f}".format(backlash_x,backlash_y))
-
-    
     def move_z_rel(self, step):
         if step!=0:
             self.ask("1HR Z={:d}".format(int(step*self.unit_scale)))
 
-        
-#     def get_speed_xy(self):
-#         print(self.ask("2HSPEED X? Y?"))
-#     
+    def set_backlash_xy(self, backlash_x, backlash_y):
+        self.ask("2HB X= {:1.4f} Y= {:1.4f}".format(backlash_x,backlash_y)) 
 
     def get_speed_x(self):
         speed = float(self.ask("2HSPEED X?").split("=")[1])
@@ -242,26 +225,10 @@ class ASIXYStage(object):
         speed = float(self.ask("1HSPEED Z?").split("=")[1])
         return speed  
         
-    def set_speed_xy(self, speed_x, speed_y=None):
-        if speed_y is None:
-            speed_y = speed_x
-        """
-        Sets the maximum speed at which the stage will move. Speed is set in millimeters
-        per second. Maximum speed is = 7.5 mm/s for standard 6.5 mm pitch leadscrews.
-        """
+    def set_speed_xy(self, speed_x, speed_y):
         self.ask("2HSPEED X= {:1.4f} Y= {:1.4f}".format(speed_x,speed_y))
         
-    def set_acc_xy(self, acc_x, acc_y=None):
-        if acc_y is None:
-            acc_y = acc_x
-        """
-        This command sets the amount of time in milliseconds that it takes an axis motor
-        speed to go from the start velocity to the maximum velocity and then back down
-        again at the end of the move. At a minimum, this acceleration / deceleration time
-        must be greater than t_step (the amount of time it takes for the controller to go
-        through one loop of its main execution code. Use the INFO command to
-        determine the t_step).
-        """
+    def set_acc(self, acc_x, acc_y):
         self.ask("2HAC X= {:1.4f} Y= {:1.4f}".format(acc_x,acc_y))    
         
     def _scale(self, val):
