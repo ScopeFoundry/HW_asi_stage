@@ -1,6 +1,7 @@
 import serial
 import time
 import threading
+import numpy as np
 
 class ASIXYStage(object):
     
@@ -65,7 +66,7 @@ class ASIXYStage(object):
             if self.debug: print("ASI XY ask resp1:", repr(resp1))
             #read until end-of-text is received
             t0 = time.time()
-            timeout = 1
+            timeout = 0.5
             while True:
                 resp2 = self.ser.readline()
                 if self.debug: print("ASI XY ask resp2:", repr(resp2))
@@ -96,8 +97,8 @@ class ASIXYStage(object):
         return float(y)/self.unit_scale
     
     def read_pos_z(self):
-        y = self.ask("1HW Z")
-        return float(y)/self.unit_scale
+        z = self.ask("1HW Z")
+        return float(z)/self.unit_scale
     
     def is_busy_xy(self):
         with self.lock:
@@ -144,8 +145,6 @@ class ASIXYStage(object):
         self.ask("2HM Y= {:d}".format(self._scale(target)))
         
     def move_z(self, target):
-        self.ask("1HM Z= {:d}".format(self._scale(target))) 
-    
         self.ask("1HM Z= {:d}".format(self._scale(target))) 
           
     def move_x_and_wait(self, target,timeout=10):
@@ -225,7 +224,6 @@ class ASIXYStage(object):
         if step!=0:
             self.ask("1HR Z={:d}".format(int(step*self.unit_scale)))
 
-        
 #     def get_speed_xy(self):
 #         print(self.ask("2HSPEED X? Y?"))
 #     
