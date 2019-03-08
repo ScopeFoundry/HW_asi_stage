@@ -213,6 +213,10 @@ class ASIXYStage(object):
     def set_backlash_xy(self, backlash_x, backlash_y):
         self.ask("2HB X= {:1.4f} Y= {:1.4f}".format(backlash_x,backlash_y)) 
 
+#     def get_speed_xy(self):
+#         print(self.ask("2HSPEED X? Y?"))
+#     
+
     def get_speed_x(self):
         speed = float(self.ask("2HSPEED X?").split("=")[1])
         return speed
