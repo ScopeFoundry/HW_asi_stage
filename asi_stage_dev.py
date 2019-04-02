@@ -96,8 +96,8 @@ class ASIXYStage(object):
         return float(y)/self.unit_scale
     
     def read_pos_z(self):
-        y = self.ask("1HW Z")
-        return float(y)/self.unit_scale
+        z = self.ask("1HW Z")
+        return float(z)/self.unit_scale
     
     def is_busy_xy(self):
         with self.lock:
@@ -144,8 +144,6 @@ class ASIXYStage(object):
         self.ask("2HM Y= {:d}".format(self._scale(target)))
         
     def move_z(self, target):
-        self.ask("1HM Z= {:d}".format(self._scale(target))) 
-    
         self.ask("1HM Z= {:d}".format(self._scale(target))) 
           
     def move_x_and_wait(self, target,timeout=10):

@@ -7,26 +7,30 @@ class ASIStage2DScan(BaseRaster2DSlowScan):
     name = 'asi_stage_raster'
     
     def __init__(self, app):
-        BaseRaster2DSlowScan.__init__(self, app, h_limits=(-15,15), v_limits=(-15,15), h_spinbox_step = 0.010, v_spinbox_step=0.010,
-                                      h_unit="mm", v_unit="mm")
+        BaseRaster2DSlowScan.__init__(self, app, h_limits=(-15,15), v_limits=(-15,15),
+                                      h_spinbox_step = 0.010, v_spinbox_step=0.010,
+                                      h_unit="mm", v_unit="mm",circ_roi_size=0.002)
 
     def setup(self):
         BaseRaster2DSlowScan.setup(self)
         self.stage = self.app.hardware['asi_stage']
-        
-    #def move_position_h(self, h):
-    #    S = self.stage.settings
-    #    self.stage.other_observer = True
-    #    try:
-    #        S["x_target"] = h
-    #        #t0 = time.time()
-    #        #while True:
-    #        #    if not self.stage.is_busy_xy():
-    #        #        break
-    #            #print(time.time()-t0)
-    #    finally:
-    #        self.stage.other_observer = False
-    
+
+    def new_pt_pos(self, x,y):
+        # overwrite the function that lets you drag and drop the position
+        # asi stage needs some time before
+        S = self.stage.settings
+        self.stage.other_observer = True
+        try:
+            if not self.stage.settings['connected']:
+                raise IOError("Not connected to ASI stage")
+            S["x_target"] = x
+            S["y_target"] = y
+            while self.stage.is_busy_xy():
+                time.sleep(0.03)
+            self.stage.correct_backlash(0.02)
+        finally:
+            self.stage.other_observer = False
+            
     #def move_position(self, h,v):
     #    
     #    S = self.stage.settings
@@ -37,55 +41,48 @@ class ASIStage2DScan(BaseRaster2DSlowScan):
     #            raise IOError("Not connected to ASI stage")
     #        
     #        #update target position
-    #        S["x_target"] = h
-    #        S["y_target"] = v
+    #        #S["x_target"] = h
+    #        #S["y_target"] = v
+    #        self.stage.move_x(h)
     #        # wait till arrived
-    #        #while True:
-    #        #    time.sleep(0.025)
-    #        #    if not self.stage.is_busy_xy():
-    #        #        break
-    #    finally:
-    #        self.stage.other_observer = False
+    #        while self.stage.is_busy_xy():
+    #           time.sleep(0.03)
+    #       self.stage.move_y(v)
+    #       while self.stage.is_busy_xy():
+    #           time.sleep(0.03)
+    #   finally:
+    #       self.stage.other_observer = False
             
-    #def move_position_start(self, h,v):
-    #    self.move_position(h-0.02, v-0.02) # manual backlash correction
-    #    self.move_position(h, v)
-    #def move_position_slow(self, h,v, dh,dv):
-    #    self.move_position(h-0.02, v-0.02) # manual backlash correction
-    #    self.move_position(h, v)
-
-    #def move_position_fast(self,  h,v, dh,dv):
-    #    self.move_position_h(h)
-    
     def move_position_start(self, h,v):
         print('start scan, moving to x={:.4f} , y={:.4f} '.format(h,v))
-
-        self.stage.move_x(h)
-        self.stage.move_y(v)
+        self.stage.settings["x_target"] = h
+        self.stage.settings["y_target"] = v
+        #self.stage.move_x(h)
+        #self.stage.move_y(v)
         while self.stage.is_busy_xy():
                 time.sleep(0.03)
         self.stage.correct_backlash(0.02)
         
-        
     def move_position_slow(self, h,v,dh,dv):   
         print('new line, moving to x={:.4f} , y={:.4f} '.format(h,v))
-        self.stage.move_y(v)
-        self.stage.move_x(h-0.02)
+        self.stage.settings["x_target"] = h-0.02
+        self.stage.settings["y_target"] = v
+        #self.stage.move_y(v)
+        #self.stage.move_x(h-0.02)
         while self.stage.is_busy_xy():
                 time.sleep(0.03)
-        self.stage.move_x(h)
+        #self.stage.move_x(h)
+        self.stage.settings["x_target"] = h
         while self.stage.is_busy_xy():
                 time.sleep(0.03)
 
     def move_position_fast(self, h,v,dh,dv):
-        # move without explicitly waiting for stage to finish
+        # move without explicitely waiting for stage to finish
         # otherwise the internal PID settings of the stage limits the pixel speed 
-        self.stage.move_x(h)
-        time.sleep(1.2*abs(dh) / self.stage.settings['speed_xy'])
-
-
-
-
+        self.stage.settings["x_target"] = h
+        time.sleep(1.2*dh / self.stage.settings['xy_speed'])
+        
+                
 class ASIStageDelay2DScan(ASIStage2DScan):
 
     name = 'asi_stage_delay_raster'
@@ -103,6 +100,4 @@ class ASIStageDelay2DScan(ASIStage2DScan):
 
     def update_display(self):
         pass    
-    
-    
         
