@@ -289,7 +289,8 @@ class ASIXYStage(object):
     def homeXY(self):
         self.ask("2HHOME X Y")
         
-    
+    def homeZ(self):
+        self.ask("1HHOME Z")
     
     def workaroundASIStageBug(self, a, *b):
         # Some positions cannot be processed by ASI stage,

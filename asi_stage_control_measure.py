@@ -59,32 +59,43 @@ class ASIStageControlMeasure(Measurement):
         self.stage.settings.backlash_xy.connect_to_widget(
             self.ui.xy_backlash_doubleSpinBox)
 
-
         ####### Buttons
-        def x_up():
-            self.stage.settings['x_target']+=self.settings['jog_step_xy']
-        self.ui.x_up_pushButton.clicked.connect(x_up)
-        
-        def x_down():
-            self.stage.settings['x_target']-=self.settings['jog_step_xy']
-        self.ui.x_down_pushButton.clicked.connect(x_down)
 
-        def y_up():
-            self.stage.settings['y_target']+=self.settings['jog_step_xy']
-        self.ui.y_up_pushButton.clicked.connect(y_up)
+        self.ui.x_up_pushButton.clicked.connect(self.x_up)
         
-        def y_down():
-            self.stage.settings['y_target']-=self.settings['jog_step_xy']
-        self.ui.y_down_pushButton.clicked.connect(y_down)
+        self.ui.x_down_pushButton.clicked.connect(self.x_down)
+
+        self.ui.y_up_pushButton.clicked.connect(self.y_up)
         
+        self.ui.y_down_pushButton.clicked.connect(self.y_down)
         
-        def z_up():
-            self.stage.settings['z_target']+=self.settings['jog_step_z']
-        self.ui.z_up_pushButton.clicked.connect(z_up)
+        self.ui.z_up_pushButton.clicked.connect(self.z_up)
+        self.ui.z_down_pushButton.clicked.connect(self.z_down)
         
-        def z_down():
-            self.stage.settings['z_target']-=self.settings['jog_step_z']
-        self.ui.z_down_pushButton.clicked.connect(z_down)
-        
-        
-        
+
+    def x_up(self):
+        #self.stage.settings['x_target']+=self.settings['jog_step_xy']
+        self.stage.move_x_rel(self.settings['jog_step_xy'])
+    
+    def x_down(self):
+        self.stage.move_x_rel(-self.settings['jog_step_xy'])
+        #self.stage.settings['x_target']-=self.settings['jog_step_xy']
+
+
+    def y_up(self):
+        #self.stage.settings['y_target']+=self.settings['jog_step_xy']
+        self.stage.move_y_rel(self.settings['jog_step_xy'])
+
+    
+    def y_down(self):
+        #self.stage.settings['y_target']-=self.settings['jog_step_xy']
+        self.stage.move_y_rel(-self.settings['jog_step_xy'])
+
+    
+    def z_up(self):
+        self.stage.move_z_rel(self.settings['jog_step_z'])
+        #self.stage.settings['z_target']+=self.settings['jog_step_z']
+    
+    def z_down(self):
+        self.stage.move_z_rel(-self.settings['jog_step_z'])
+        #self.stage.settings['z_target']-=self.settings['jog_step_z']

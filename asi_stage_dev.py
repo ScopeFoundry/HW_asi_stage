@@ -60,7 +60,7 @@ class ASIXYStage(object):
     def ask(self, cmd): # format: '2HW X' -> ':A 355'
         with self.lock:
             self.send_cmd(cmd)
-            time.sleep(0.010)
+            time.sleep(0.020)
             resp1 = self.ser.readline()
             if self.debug: print("ASI XY ask resp1:", repr(resp1))
             #read until end-of-text is received
@@ -125,14 +125,14 @@ class ASIXYStage(object):
     def wait_until_not_busy_xy(self, timeout=10):    
         t0 = time.time()
         while self.is_busy_xy():
-            time.sleep(0.010)
+            time.sleep(0.020)
             if time.time() - t0 > timeout:
                 raise IOError("ASI stage took too long during wait")
 
     def wait_until_not_busy_z(self, timeout=10):    
         t0 = time.time()
         while self.is_busy_z():
-            time.sleep(0.010)
+            time.sleep(0.020)
             if time.time() - t0 > timeout:
                 raise IOError("ASI stage took too long during wait")
 
@@ -219,7 +219,8 @@ class ASIXYStage(object):
         disables the anti-backlash algorithm for that axis
         """
         self.ask("2HB X= {:1.4f} Y= {:1.4f}".format(backlash_x,backlash_y))
-
+    def set_backlash_z(self, backlash_z):
+        self.ask("1HB Z= {:1.4f}".format(backlash_z))
     
     def move_z_rel(self, step):
         if step!=0:
@@ -270,7 +271,7 @@ class ASIXYStage(object):
         
         scale_int = int(val*self.unit_scale)
         # stage bug: positions can't end in 3
-        if scale_int % 10 == 3:
+        if abs(scale_int) % 10 == 3: # -3 mod 10 = 7!!!
             scale_int +=1
         return scale_int
     
