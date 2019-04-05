@@ -53,7 +53,7 @@ class ASIStageHW(HardwareComponent):
         if self.enable_z:
             z_pos = self.settings.New('z_position', ro=True, **xy_kwargs)
             z_target = self.settings.New('z_target', ro=False, **xy_kwargs)  
-                  
+            backlash_z = self.settings.New('backlash_z', ro=False, initial=0.00, unit='mm', spinbox_decimals=3)
 
         
         #self.settings.New('filter_wheel', dtype=str, ro=False)
@@ -91,6 +91,10 @@ class ASIStageHW(HardwareComponent):
         S.y_target.connect_to_hardware(
             write_func = self.move_y
             )
+        
+        S.backlash_xy.connect_to_hardware(
+            write_func = self.stage.set_backlash_xy
+            )
 
         
         if self.enable_z:
@@ -101,7 +105,9 @@ class ASIStageHW(HardwareComponent):
             S.z_target.connect_to_hardware(
                 write_func = self.stage.move_z
                 )
-
+            S.backlash_z.connect_to_hardware(
+                write_func = self.stage.set_backlash_z
+                )
             #self.stage.set_backlash_z(0.)
 
 
@@ -160,6 +166,7 @@ class ASIStageHW(HardwareComponent):
                 time.sleep(1.0)
                 # it's better not to query the asi stage while it's being observed by e.g the scanning app
             else:
+                time.sleep(0.2)
 
     def halt_xy(self):
         self.stage.halt_xy()

@@ -217,6 +217,7 @@ class ASIXYStage(object):
         disables the anti-backlash algorithm for that axis
         """
         self.ask("2HB X= {:1.4f} Y= {:1.4f}".format(backlash_x,backlash_y))
+        
     def set_backlash_z(self, backlash_z):
         self.ask("1HB Z= {:1.4f}".format(backlash_z))
     
