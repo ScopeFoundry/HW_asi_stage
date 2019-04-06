@@ -160,6 +160,7 @@ class ASIStageHW(HardwareComponent):
     def update_thread_run(self):
         while not self.update_thread_interrupted:
             self.settings.y_position.read_from_hardware()
+            self.settings.x_position.read_from_hardware()
             if self.enable_z:
                     self.settings.z_position.read_from_hardware()
             if self.other_observer:
