@@ -80,7 +80,7 @@ class ASIStage2DScan(BaseRaster2DSlowScan):
         # move without explicitely waiting for stage to finish
         # otherwise the internal PID settings of the stage limits the pixel speed 
         self.stage.settings["x_target"] = h
-        time.sleep(1.2*dh / self.stage.settings['xy_speed'])
+        time.sleep(1.2*dh / self.stage.settings['speed_xy'])
         
                 
 class ASIStageDelay2DScan(ASIStage2DScan):

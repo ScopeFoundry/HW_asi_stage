@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>517</width>
-    <height>410</height>
+    <height>444</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -205,13 +205,13 @@
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QDoubleSpinBox" name="xy_speed_doubleSpinBox"/>
+          <widget class="QDoubleSpinBox" name="speed_xy_doubleSpinBox"/>
          </item>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="xy_acc_doubleSpinBox"/>
+          <widget class="QDoubleSpinBox" name="acc_xy_doubleSpinBox"/>
          </item>
          <item row="1" column="2">
-          <widget class="QDoubleSpinBox" name="xy_backlash_doubleSpinBox"/>
+          <widget class="QDoubleSpinBox" name="backlash_xy_doubleSpinBox"/>
          </item>
         </layout>
        </widget>
