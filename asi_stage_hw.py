@@ -159,6 +159,7 @@ class ASIStageHW(HardwareComponent):
                     self.settings.z_position.read_from_hardware()
             if self.other_observer:
                 # it's better not to query the asi stage while it's being observed by e.g the scanning app
+                time.sleep(1)
             else:
                 time.sleep(0.2)
 
