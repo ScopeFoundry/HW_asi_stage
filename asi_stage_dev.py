@@ -36,6 +36,7 @@ class ASIXYStage(object):
         if self.debug: print("ASI XY cmd:", repr(cmd), repr(cmd_bytes))
         self.ser.write(cmd_bytes)
         if self.debug: print ("ASI XY done sending cmd")
+    
     def info(self,axis):
         with self.lock:
             self.send_cmd("2HI "+axis)
@@ -192,6 +193,9 @@ class ASIXYStage(object):
         
     def halt_xy(self):
         self.ask("2HHALT")
+        
+    def halt_z(self):
+        self.ask("1HHALT")
         
     def set_limits_xy(self, xl, xu, yl, yu): # x in [xl, xu], y in [yl, yu]
         self.ask("2HSL X= {:f} Y= {:f}".format(xl, yl))
