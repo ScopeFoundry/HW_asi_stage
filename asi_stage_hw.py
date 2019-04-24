@@ -247,6 +247,9 @@ class ASIStageHW(HardwareComponent):
     def is_busy_xy(self):
         return self.attempt_10_times(self.stage.is_busy_xy)
     
+    def is_busy_z(self):
+        return self.attempt_10_times(self.stage.is_busy_z)
+    
     def correct_backlash(self,backlash):
         self.move_x_rel(-backlash)
         self.move_y_rel(-backlash)
