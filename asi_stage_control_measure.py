@@ -74,12 +74,12 @@ class ASIStageControlMeasure(Measurement):
         
 
     def x_up(self):
-        #self.stage.settings['x_target']+=self.settings['jog_step_xy']
-        self.stage.move_x_rel(self.settings['jog_step_xy'])
+        self.stage.settings['x_target']+=self.settings['jog_step_xy']
+        #self.stage.move_x_rel(self.settings['jog_step_xy'])
     
     def x_down(self):
-        self.stage.move_x_rel(-self.settings['jog_step_xy'])
-        #self.stage.settings['x_target']-=self.settings['jog_step_xy']
+        #self.stage.move_x_rel(-self.settings['jog_step_xy'])
+        self.stage.settings['x_target']-=self.settings['jog_step_xy']
 
 
     def y_up(self):
