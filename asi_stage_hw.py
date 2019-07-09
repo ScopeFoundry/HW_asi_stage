@@ -241,6 +241,9 @@ class ASIStageHW(HardwareComponent):
         else: 
             return self.attempt_10_times(self.stage.move_x_rel, x)
     
+    def move_z(self, z):
+        return self.attempt_10_times(self.stage.move_z, z)
+    
     def move_z_rel(self, x):
         return self.attempt_10_times(self.stage.move_z_rel, x)
     
