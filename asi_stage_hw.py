@@ -21,7 +21,7 @@ class ASIStageHW(HardwareComponent):
         ('6_', 6),
         ('7_', 7),])
     
-    def __init__(self, app, debug=False, name=None, enable_xy=True, enable_z=True, enable_fw=True, swap_xy=False, invert_x=False,invert_y=False):
+    def __init__(self, app, debug=False, name=None, enable_xy=True, enable_z=True, enable_fw=False, swap_xy=False, invert_x=False,invert_y=False):
         self.enable_xy = enable_xy
         self.enable_z = enable_z
         self.swap_xy = swap_xy
@@ -42,7 +42,7 @@ class ASIStageHW(HardwareComponent):
         x_target = self.settings.New('x_target', ro=False, **xy_kwargs)        
         y_target = self.settings.New('y_target', ro=False, **xy_kwargs)
         
-        self.settings.New("speed_xy", ro=False, initial=0.2, unit='mm/s', spinbox_decimals=1, spinbox_step=0.1)
+        self.settings.New("speed_xy", ro=False, initial=5.0, unit='mm/s', spinbox_decimals=1, spinbox_step=0.1)
         self.settings.New("acc_xy", ro=False, initial=10, unit='ms', spinbox_decimals=1)
         self.settings.New("backlash_xy", ro=False, initial=0.00, unit='mm', spinbox_decimals=3)
         
@@ -57,6 +57,8 @@ class ASIStageHW(HardwareComponent):
         if self.enable_z: self.add_operation("Halt Z", self.halt_z)
         self.add_operation("Home XY", self.home_xy)
         if self.enable_z: self.add_operation("Home Z", self.home_z)
+        
+        # TODO Filter wheel is not configured
         
         
     def connect(self):
@@ -159,6 +161,7 @@ class ASIStageHW(HardwareComponent):
             self.settings.y_position.read_from_hardware()
             self.settings.x_position.read_from_hardware()
             if self.enable_z:
+                    #print("reading z pos")
                     self.settings.z_position.read_from_hardware()
             if self.other_observer:
                 # it's better not to query the asi stage while it's being observed by e.g the scanning app
