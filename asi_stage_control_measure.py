@@ -36,10 +36,22 @@ class ASIStageControlMeasure(Measurement):
             self.ui.x_pos_doubleSpinBox)
         self.stage.settings.y_position.connect_to_widget(
             self.ui.y_pos_doubleSpinBox)
-
         self.stage.settings.z_position.connect_to_widget(
             self.ui.z_pos_doubleSpinBox)
 
+
+        self.ui.x_target_lineEdit.returnPressed.connect(
+            self.stage.settings.x_target.update_value)
+        self.ui.x_target_lineEdit.returnPressed.connect(
+            lambda: self.ui.x_target_lineEdit.setText(""))
+        self.ui.y_target_lineEdit.returnPressed.connect(
+            self.stage.settings.y_target.update_value)
+        self.ui.y_target_lineEdit.returnPressed.connect(
+            lambda: self.ui.y_target_lineEdit.setText(""))
+        self.ui.z_target_lineEdit.returnPressed.connect(
+            self.stage.settings.z_target.update_value)
+        self.ui.z_target_lineEdit.returnPressed.connect(
+            lambda: self.ui.z_target_lineEdit.setText(""))
         
         self.settings.jog_step_xy.connect_to_widget(
             self.ui.xy_step_doubleSpinBox)
@@ -49,6 +61,10 @@ class ASIStageControlMeasure(Measurement):
         
         
         self.ui.xy_stop_pushButton.clicked.connect(self.stage.halt_xy)
+        self.ui.home_xy_pushButton.clicked.connect(self.stage.home_xy)
+
+        self.ui.z_stop_pushButton.clicked.connect(self.stage.halt_z)
+        self.ui.home_z_pushButton.clicked.connect(self.stage.home_z)
 
         self.stage.settings.acc_xy.connect_to_widget(
             self.ui.acc_xy_doubleSpinBox)
@@ -71,6 +87,9 @@ class ASIStageControlMeasure(Measurement):
         
         self.ui.z_up_pushButton.clicked.connect(self.z_up)
         self.ui.z_down_pushButton.clicked.connect(self.z_down)
+        
+        
+        
         
 
     def x_up(self):
