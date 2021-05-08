@@ -177,6 +177,8 @@ class ASIStageHW(HardwareComponent):
         self.stage.home_and_center_xy()
     def home_z(self):
         self.stage.home_and_wait_z()
+        time.sleep(0.25)
+        self.stage.set_here_z(25)
         
     def set_speed_xy(self, speed):
         self.stage.set_speed_xy(speed,speed)

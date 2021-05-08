@@ -145,7 +145,7 @@ class ASIXYStage(object):
         self.ask("2HM Y= {:d}".format(self._scale(target)))
         
     def move_z(self, target):
-        self.ask("1HM Z= {:d}".format(self._scale(target))) 
+        self.ask("1HM Z= {:d}".format(self._scale(target)))
           
     def move_x_and_wait(self, target,timeout=10):
         if int(self.read_pos_x()*self.unit_scale) == int(target*self.unit_scale):
@@ -170,6 +170,8 @@ class ASIXYStage(object):
         self.home_z()
         self.wait_until_not_busy_z(timeout)
 
+    def set_here_z(self, target):
+        self.ask("1HHERE Z= {:d}".format(self._scale(target)))
     
     def home_z(self):
         self.ask("1HHOME Z")
