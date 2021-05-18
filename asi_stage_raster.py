@@ -6,7 +6,9 @@ class ASIStage2DScan(BaseRaster2DSlowScan):
     name = 'asi_stage_raster'
     
     def __init__(self, app):
-        BaseRaster2DSlowScan.__init__(self, app, h_limits=(-15,15), v_limits=(-15,15),
+        BaseRaster2DSlowScan.__init__(self, app, 
+                                      h_limits=(-37,37), v_limits=(-23,37),
+                                      #h_limits=(-15,15), v_limits=(-15,15),
                                       h_spinbox_step = 0.010, v_spinbox_step=0.010,
                                       h_unit="mm", v_unit="mm",circ_roi_size=0.002)
 
