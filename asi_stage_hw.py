@@ -180,8 +180,11 @@ class ASIStageHW(HardwareComponent):
         time.sleep(0.25)
         self.stage.set_here_z(25)
         
-    def set_speed_xy(self, speed):
-        self.stage.set_speed_xy(speed,speed)
+    def set_speed_xy(self, speed_x, speed_y = None):
+        if speed_y == None:
+            self.stage.set_speed_xy(speed_x, speed_x)
+        else:
+            self.stage.set_speed_xy(speed_x,speed_y)
         
     def set_acc_xy(self, acc):
         self.stage.set_acc_xy(acc,acc)
