@@ -39,8 +39,8 @@ class ASIStageHW(HardwareComponent):
         x_pos = self.settings.New('x_position', ro=True, **xy_kwargs)        
         y_pos = self.settings.New('y_position', ro=True, **xy_kwargs)
         
-        x_target = self.settings.New('x_target', ro=False, **xy_kwargs)        
-        y_target = self.settings.New('y_target', ro=False, **xy_kwargs)
+        self.x_target = self.settings.New('x_target', ro=False, **xy_kwargs)        
+        self.y_target = self.settings.New('y_target', ro=False, **xy_kwargs)
         
         self.settings.New("speed_xy", ro=False, initial=5.0, unit='mm/s', spinbox_decimals=1, spinbox_step=0.1)
         self.settings.New("acc_xy", ro=False, initial=10, unit='ms', spinbox_decimals=1)

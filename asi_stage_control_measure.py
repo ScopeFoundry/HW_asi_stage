@@ -102,19 +102,19 @@ class ASIStageControlMeasure(Measurement):
 
 
     def y_up(self):
-        #self.stage.settings['y_target']+=self.settings['jog_step_xy']
-        self.stage.move_y_rel(self.settings['jog_step_xy'])
+        self.stage.settings['y_target']+=self.settings['jog_step_xy']
+        #self.stage.move_y_rel(self.settings['jog_step_xy'])
 
     
     def y_down(self):
-        #self.stage.settings['y_target']-=self.settings['jog_step_xy']
-        self.stage.move_y_rel(-self.settings['jog_step_xy'])
+        self.stage.settings['y_target']-=self.settings['jog_step_xy']
+        #self.stage.move_y_rel(-self.settings['jog_step_xy'])
 
     
     def z_up(self):
-        self.stage.move_z_rel(self.settings['jog_step_z'])
-        #self.stage.settings['z_target']+=self.settings['jog_step_z']
+        #self.stage.move_z_rel(self.settings['jog_step_z'])
+        self.stage.settings['z_target']+=self.settings['jog_step_z']
     
     def z_down(self):
-        self.stage.move_z_rel(-self.settings['jog_step_z'])
-        #self.stage.settings['z_target']-=self.settings['jog_step_z']
+        #self.stage.move_z_rel(-self.settings['jog_step_z'])
+        self.stage.settings['z_target']-=self.settings['jog_step_z']
