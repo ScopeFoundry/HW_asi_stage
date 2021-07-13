@@ -74,6 +74,9 @@ class ASIStageControlMeasure(Measurement):
         
         self.stage.settings.backlash_xy.connect_to_widget(
             self.ui.backlash_xy_doubleSpinBox)
+        
+        '''self.stage.settings.speed_z.connect_to_widget(
+            self.ui.speed_z_doubleSpinBox)'''
 
         ####### Buttons
 
