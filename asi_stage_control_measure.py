@@ -1,6 +1,6 @@
 from ScopeFoundry import Measurement
 from ScopeFoundry.helper_funcs import load_qt_ui_file, sibling_path
-
+from pyqtgraph.widgets.ComboBox import ComboBox
 
 class ASIStageControlMeasure(Measurement):
     
@@ -75,9 +75,13 @@ class ASIStageControlMeasure(Measurement):
         self.stage.settings.backlash_xy.connect_to_widget(
             self.ui.backlash_xy_doubleSpinBox)
         
-        self.stage.settings.speed_z.connect_to_widget(
-            self.ui.speed_z_doubleSpinBox)
-
+        speedDict = {'fast':1.00, 'slow':0.001}
+        self.ui.speed_z_comboBox.addItems(speedDict)
+        def set_z_speed():
+            self.stage.settings['speed_z'] = speedDict.get(self.ui.speed_z_comboBox.currentText())
+        self.ui.speed_z_comboBox.currentIndexChanged.connect(set_z_speed)
+        
+        
         ####### Buttons
 
         self.ui.x_up_pushButton.clicked.connect(self.x_up)
