@@ -75,7 +75,11 @@ class ASIStageControlMeasure(Measurement):
         self.stage.settings.backlash_xy.connect_to_widget(
             self.ui.backlash_xy_doubleSpinBox)
         
-        self.ui.speed_z_comboBox.addItems(self.app.speedZDict)
+        try:
+            self.ui.speed_z_comboBox.addItems(self.app.speedZDict)
+        except:
+            self.app.speedZDict = {'fast':1.000, 'slow':0.001}
+            self.ui.speed_z_comboBox.addItems(self.app.speedZDict)
         def set_z_speed():
             self.stage.settings['speed_z'] = self.app.speedZDict.get(self.ui.speed_z_comboBox.currentText())
         self.ui.speed_z_comboBox.currentIndexChanged.connect(set_z_speed)
