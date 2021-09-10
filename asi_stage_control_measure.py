@@ -75,6 +75,7 @@ class ASIStageControlMeasure(Measurement):
         self.stage.settings.backlash_xy.connect_to_widget(
             self.ui.backlash_xy_doubleSpinBox)
         
+        #z speed dict for z speed combobox
         try:
             self.ui.speed_z_comboBox.addItems(self.app.speedZDict)
         except:
