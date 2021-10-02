@@ -69,8 +69,18 @@ class ASIStageControlMeasure(Measurement):
         self.stage.settings.acc_xy.connect_to_widget(
             self.ui.acc_xy_doubleSpinBox)
         
-        self.stage.settings.speed_xy.connect_to_widget(
-            self.ui.speed_xy_doubleSpinBox)
+        '''self.stage.settings.speed_xy.connect_to_widget(
+            self.ui.speed_xy_doubleSpinBox)'''
+        
+        #xy speed dict for xy speed combobox
+        try:
+            self.ui.speed_xy_comboBox.addItems(self.app.speedXYDict)
+        except:
+            self.app.speedXYDict = {'3.00':3.00, '1.00':1.00, '0.50':0.50, '0.10':0.10, '0.01':0.01}
+            self.ui.speed_xy_comboBox.addItems(self.app.speedXYDict)
+        def set_xy_speed():
+            self.stage.settings['speed_xy'] = self.app.speedXYDict.get(self.ui.speed_xy_comboBox.currentText())
+        self.ui.speed_xy_comboBox.currentIndexChanged.connect(set_xy_speed)
         
         self.stage.settings.backlash_xy.connect_to_widget(
             self.ui.backlash_xy_doubleSpinBox)
