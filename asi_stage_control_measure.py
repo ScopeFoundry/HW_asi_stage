@@ -74,6 +74,9 @@ class ASIStageControlMeasure(Measurement):
         
         self.stage.settings.backlash_xy.connect_to_widget(
             self.ui.backlash_xy_doubleSpinBox)
+        
+        '''self.stage.settings.speed_z.connect_to_widget(
+            self.ui.speed_z_doubleSpinBox)'''
 
         ####### Buttons
 
@@ -112,9 +115,9 @@ class ASIStageControlMeasure(Measurement):
 
     
     def z_up(self):
-        self.stage.move_z_rel(self.settings['jog_step_z'])
-        #self.stage.settings['z_target']+=self.settings['jog_step_z']
+        #self.stage.move_z_rel(self.settings['jog_step_z'])
+        self.stage.settings['z_target']+=self.settings['jog_step_z']
     
     def z_down(self):
-        self.stage.move_z_rel(-self.settings['jog_step_z'])
-        #self.stage.settings['z_target']-=self.settings['jog_step_z']
+        #self.stage.move_z_rel(-self.settings['jog_step_z'])
+        self.stage.settings['z_target']-=self.settings['jog_step_z']

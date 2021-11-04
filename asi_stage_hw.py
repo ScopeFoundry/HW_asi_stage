@@ -31,18 +31,18 @@ class ASIStageHW(HardwareComponent):
         HardwareComponent.__init__(self, app, debug=debug, name=name)
     
     def setup(self):
-        xy_kwargs = dict(initial = 0,
+        xy_kwargs = dict(initial = 0.00000,
                           dtype=float,
                           unit='mm',
-                          spinbox_decimals = 4,
-                          spinbox_step=0.1)
+                          spinbox_decimals = 5,
+                          spinbox_step=0.10000)
         x_pos = self.settings.New('x_position', ro=True, **xy_kwargs)        
         y_pos = self.settings.New('y_position', ro=True, **xy_kwargs)
         
         x_target = self.settings.New('x_target', ro=False, **xy_kwargs)        
         y_target = self.settings.New('y_target', ro=False, **xy_kwargs)
         
-        self.settings.New("speed_xy", ro=False, initial=5.0, unit='mm/s', spinbox_decimals=1, spinbox_step=0.1)
+        self.settings.New("speed_xy", ro=False, initial=3.00, unit='mm/s', spinbox_decimals=2, spinbox_step=0.10, vmin=0.00, vmax=5.00)
         self.settings.New("acc_xy", ro=False, initial=10, unit='ms', spinbox_decimals=1)
         self.settings.New("backlash_xy", ro=False, initial=0.00, unit='mm', spinbox_decimals=3)
         
@@ -50,6 +50,8 @@ class ASIStageHW(HardwareComponent):
             z_pos = self.settings.New('z_position', ro=True, **xy_kwargs)
             z_target = self.settings.New('z_target', ro=False, **xy_kwargs)  
             backlash_z = self.settings.New('backlash_z', ro=False, initial=0.00, unit='mm', spinbox_decimals=3)
+            speed_z = self.settings.New("speed_z", ro=False, initial=1.20000, unit='mm/s', spinbox_decimals=5, spinbox_step=0.10000, vmin=0.00000, vmax=3.00000)
+            
         
         self.settings.New('port', dtype=str, initial='COM4')
         
@@ -102,6 +104,15 @@ class ASIStageHW(HardwareComponent):
             write_func = self.set_speed_xy
             )
         S.speed_xy.write_to_hardware()
+        
+        '''# xbox controller speed writing
+        xbS = self.app.measurements['xbcontrol_mc'].settings
+        xbS.speed_x.connect_to_hardware(
+            write_func = self.set_speed_x
+            )
+        xbS.speed_x.write_to_hardware()'''
+        
+        
         S.acc_xy.connect_to_hardware(
             write_func = self.set_acc_xy
             )
@@ -120,6 +131,11 @@ class ASIStageHW(HardwareComponent):
                 write_func = self.stage.set_backlash_z
                 )
             S.backlash_z.write_to_hardware()
+            
+            S.speed_z.connect_to_hardware(
+                write_func = self.set_speed_z
+                )
+            S.speed_z.write_to_hardware()
         
         S.x_position.read_from_hardware()
         S.y_position.read_from_hardware()
@@ -133,7 +149,8 @@ class ASIStageHW(HardwareComponent):
         self.update_thread_interrupted = False
         self.update_thread = threading.Thread(target=self.update_thread_run)
         self.update_thread.start()
-
+        
+        self.is_connected = True
         
     def disconnect(self):
         
@@ -149,6 +166,7 @@ class ASIStageHW(HardwareComponent):
             self.stage.close()
             del self.stage
             
+        self.is_connected = False
             
     def write_fw_position(self, pos_name):
         assert pos_name in self.filter_wheel_positions.keys()
@@ -179,9 +197,21 @@ class ASIStageHW(HardwareComponent):
         self.stage.home_and_wait_z()
         time.sleep(0.25)
         self.stage.set_here_z(25)
-        
-    def set_speed_xy(self, speed):
-        self.stage.set_speed_xy(speed,speed)
+    
+    def set_speed_xy(self, speed_x, speed_y = None):
+        if speed_y == None:
+            self.stage.set_speed_xy(speed_x, speed_x)
+        else:
+            self.stage.set_speed_xy(speed_x,speed_y)
+    
+    def set_speed_x(self, speed_x):
+        self.stage.set_speed_x(speed_x)
+    
+    def set_speed_y(self, speed_y):
+        self.stage.set_speed_y(speed_y)
+    
+    def set_speed_z(self, speed_z):
+        self.stage.set_speed_z(speed_z)
         
     def set_acc_xy(self, acc):
         self.stage.set_acc_xy(acc,acc)

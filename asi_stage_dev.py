@@ -256,6 +256,15 @@ class ASIXYStage(object):
         per second. Maximum speed is = 7.5 mm/s for standard 6.5 mm pitch leadscrews.
         """
         self.ask("2HSPEED X= {:1.4f} Y= {:1.4f}".format(speed_x,speed_y))
+    
+    def set_speed_x(self, speed_x):
+        self.ask("2HSPEED X= {:1.4f}".format(speed_x))
+    
+    def set_speed_y(self, speed_y):
+        self.ask("2HSPEED Y= {:1.4f}".format(speed_y))
+        
+    def set_speed_z(self, speed_z):
+        self.ask("1HSPEED Z= {:1.4f}".format(speed_z))
         
     def set_acc_xy(self, acc_x, acc_y=None):
         if acc_y is None:
