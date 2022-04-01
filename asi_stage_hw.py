@@ -2,6 +2,7 @@ from ScopeFoundry import HardwareComponent
 from collections import OrderedDict
 import threading
 import time
+import numpy as np
 
 try:
     from .asi_stage_dev import ASIXYStage
@@ -27,7 +28,7 @@ class ASIStageHW(HardwareComponent):
         self.swap_xy = swap_xy
         self.invert_x = invert_x
         self.invert_y = invert_y
-
+        
         HardwareComponent.__init__(self, app, debug=debug, name=name)
     
     def setup(self):
@@ -42,9 +43,12 @@ class ASIStageHW(HardwareComponent):
         x_target = self.settings.New('x_target', ro=False, **xy_kwargs)        
         y_target = self.settings.New('y_target', ro=False, **xy_kwargs)
         
-        self.settings.New("speed_xy", ro=False, initial=3.00, unit='mm/s', spinbox_decimals=2, spinbox_step=0.10, vmin=0.00, vmax=5.00)
+        self.settings.New("speed_xy", ro=False, initial=3.00, unit='mm/s', spinbox_decimals=3, spinbox_step=0.10, vmin=0.00, vmax=5.00)
         self.settings.New("acc_xy", ro=False, initial=10, unit='ms', spinbox_decimals=1)
         self.settings.New("backlash_xy", ro=False, initial=0.00, unit='mm', spinbox_decimals=3)
+        
+        self.settings.New("speed_x",  ro=False, initial=3.00, unit='mm/s', spinbox_decimals=3, spinbox_step=0.10, vmin=0.00, vmax=5.00)
+        self.settings.New("speed_y",  ro=False, initial=3.00, unit='mm/s', spinbox_decimals=3, spinbox_step=0.10, vmin=0.00, vmax=5.00)
         
         if self.enable_z:
             z_pos = self.settings.New('z_position', ro=True, **xy_kwargs)
@@ -105,6 +109,18 @@ class ASIStageHW(HardwareComponent):
             )
         S.speed_xy.write_to_hardware()
         
+        S.speed_x.connect_to_hardware(
+            read_func = self.stage.get_speed_x,
+            write_func = self.set_speed_x
+        )
+        S.speed_x.write_to_hardware()
+
+        S.speed_y.connect_to_hardware(
+            read_func = self.stage.get_speed_y,
+            write_func = self.set_speed_y
+        )
+        S.speed_y.write_to_hardware()
+                    
         '''# xbox controller speed writing
         xbS = self.app.measurements['xbcontrol_mc'].settings
         xbS.speed_x.connect_to_hardware(
@@ -203,6 +219,8 @@ class ASIStageHW(HardwareComponent):
             self.stage.set_speed_xy(speed_x, speed_x)
         else:
             self.stage.set_speed_xy(speed_x,speed_y)
+        self.settings.speed_x.read_from_hardware()
+        self.settings.speed_y.read_from_hardware()
     
     def set_speed_x(self, speed_x):
         self.stage.set_speed_x(speed_x)
@@ -308,3 +326,51 @@ class ASIStageHW(HardwareComponent):
             except:
                 attempts +=1
     
+    
+    def linear_move_abs(self, x, y, z=None, speed=None):
+        
+        if speed is None:
+            speed = self.settings['speed_xy']
+        
+        # store original speed
+        sx0 = self.settings['speed_x']
+        sy0 = self.settings['speed_y']
+        sz0 = self.settings['speed_z']
+        # original position
+        x0 = self.settings['x_position']
+        y0 = self.settings['y_position']
+        z0 = self.settings['z_position']
+
+        # compute velocity vector and set speeds
+        dx = abs(x - x0)
+        dy = abs(y - y0)
+        if z is None:
+            dz = 0
+        else:
+            dz = abs(z - z0)
+        dL = np.sqrt(dx**2 + dy**2+dz**2)
+        dt = dL/speed
+        
+        print("dt ", dt)
+        print("dL", dL, dx, dy, dz)
+        if dx/dt > 1e-4:
+            self.settings['speed_x'] = dx/dt
+        if dy/dt > 1e-4:
+            self.settings['speed_y'] = dy/dt
+        if dz/dt > 1e-4:
+            self.settings['speed_z'] = dz/dt
+        print("speed", dx/dt, dy/dt, dz/dt)
+            
+        # initiate move
+        self.settings['x_target'] = x
+        self.settings['y_target'] = y
+        if z is not None:
+            self.settings['z_target'] = z
+            
+        # wait?
+        
+        # # restore original speeds
+        # self.settings['speed_x'] = sx0
+        # self.settings['speed_y'] = sy0
+        # self.settings['speed_z'] = sz0
+        

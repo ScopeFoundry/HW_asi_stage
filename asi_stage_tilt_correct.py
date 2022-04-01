@@ -4,7 +4,7 @@ from pyqtgraph.widgets.ComboBox import ComboBox
 
 class ASIStageControlMeasure(Measurement):
     
-    name = 'ASI_Stage_Control'
+    name = 'ASI_Stage_Tilt'
     
     def __init__(self, app, name=None, hw_name='asi_stage'):
         self.hw_name = hw_name
@@ -107,11 +107,9 @@ class ASIStageControlMeasure(Measurement):
         ####### Buttons
 
         self.ui.x_up_pushButton.clicked.connect(self.x_up)
-        
         self.ui.x_down_pushButton.clicked.connect(self.x_down)
 
-        self.ui.y_up_pushButton.clicked.connect(self.y_up)
-        
+        self.ui.y_up_pushButton.clicked.connect(self.y_up)        
         self.ui.y_down_pushButton.clicked.connect(self.y_down)
         
         self.ui.z_up_pushButton.clicked.connect(self.z_up)
