@@ -3,6 +3,7 @@ from collections import OrderedDict
 import threading
 import time
 import numpy as np
+from qtpy import QtCore, QtWidgets
 
 try:
     from .asi_stage_dev import ASIXYStage
@@ -66,6 +67,9 @@ class ASIStageHW(HardwareComponent):
         
         # TODO Filter wheel is not configured
         
+        self.update_timer = QtCore.QTimer(self)
+        self.update_timer.timeout.connect(self.on_update_timer)        
+        self.update_timer.start(100)        
         
     def connect(self):
         S = self.settings
@@ -191,6 +195,7 @@ class ASIStageHW(HardwareComponent):
         
         
     def update_thread_run(self):
+        return
         while not self.update_thread_interrupted:
             self.settings.y_position.read_from_hardware()
             self.settings.x_position.read_from_hardware()
@@ -202,6 +207,18 @@ class ASIStageHW(HardwareComponent):
                 time.sleep(1)
             else:
                 time.sleep(0.2)
+    
+    def on_update_timer(self):
+        if self.settings['connected']:
+            self.settings.y_position.read_from_hardware()
+            self.settings.x_position.read_from_hardware()
+            if self.enable_z:
+                    #print("reading z pos")
+                    self.settings.z_position.read_from_hardware()
+            if self.other_observer:
+                self.update_timer.setInterval(1000)
+            else:
+                self.update_timer.setInterval(200)
 
     def halt_xy(self):
         self.stage.halt_xy()
