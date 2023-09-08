@@ -2,6 +2,7 @@ from ScopeFoundry import BaseMicroscopeApp
 from ScopeFoundryHW.asi_stage.asi_stage_hw import ASIStageHW
 from ScopeFoundryHW.asi_stage.asi_stage_control_measure import ASIStageControlMeasure
 from ScopeFoundryHW.asi_stage.asi_stage_raster import ASIStageDelay2DScan
+from ScopeFoundryHW.asi_stage.asi_stage_raster_tilt import ASIStageDelay2DScanTilt
 
 class ASITestApp(BaseMicroscopeApp):
     
@@ -14,6 +15,7 @@ class ASITestApp(BaseMicroscopeApp):
         self.add_measurement(ASIStageControlMeasure(self))
         
         self.add_measurement(ASIStageDelay2DScan(self))
+        self.add_measurement(ASIStageDelay2DScanTilt(self))
                 
 if __name__ == '__main__':
     import sys
