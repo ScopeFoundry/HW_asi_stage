@@ -1,0 +1,32 @@
+ScopeFoundryHW.asi_stage
+===========================
+
+ASI Stage hardware plug-in for ScopeFoundry.
+
+This module is for LX-4000 controllers with XYZ + FW stages
+
+See the following for information:
+https://41j.com/blog/2021/03/lx-4000-stage-controller-notes/
+
+
+
+ScopeFoundry is a Python platform for controlling custom laboratory 
+experiments and visualizing scientific data
+
+<http://www.scopefoundry.org>
+
+This software is not made by or endorsed by 
+Applied Scientific Instrumentation (ASI), Inc.
+
+
+Authors
+----------
+
+Edward S. Barnard <esbarnard@lbl.gov>
+
+
+Requirements
+------------
+
+    * ScopeFoundry
+    * pyserial
